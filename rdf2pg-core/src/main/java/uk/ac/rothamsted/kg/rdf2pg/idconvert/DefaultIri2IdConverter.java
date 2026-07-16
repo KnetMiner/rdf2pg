@@ -8,7 +8,7 @@ import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
 /** 
  * <p>An IRI converter turns a full long IRI/URI into a more readable ID/Label.</p>
  * 
- * <p>They are used by the Neo4J converter, e.g., {@link RdfDataManager#getPGPropertyIdConverter()}, 
+ * <p>They are used by the rdf2neo converters, e.g., {@link RdfDataManager#getPGPropertyIdConverter()}, 
  * {@link RdfDataManager#getPGRelationTypeIdConverter()} and technically they are nothing but string/string
  * functions (where the input is an IRI).</p> 
  *   

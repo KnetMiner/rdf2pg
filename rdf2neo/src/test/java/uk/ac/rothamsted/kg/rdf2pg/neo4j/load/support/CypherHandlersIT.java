@@ -54,7 +54,7 @@ public class CypherHandlersIT
 	 * Loads some basic test RDF data into RDF.
 	 */
 	@Before
-	public void initNeoData () throws IOException
+	public void initNeoData ()
 	{
 		NeoTestUtils.initNeo ();
 
@@ -89,7 +89,7 @@ public class CypherHandlersIT
 	 * Test {@link CyNodeLoadingHandler} to see if nodes are mapped from RDF and loaded into Neo4J
 	 */
 	@Test
-	public void testNodes () throws Exception
+	public void testNodes ()
 	{
 		try (	
 			Driver neoDriver = GraphDatabase.driver ( 
@@ -120,7 +120,7 @@ public class CypherHandlersIT
 	 * Tests {@link CyRelationLoadingHandler} to see if relations are mapped from RDF and loaded into Neo4J.
 	 */
 	@Test
-	public void testRelations () throws Exception
+	public void testRelations ()
 	{
 		try (	
 			var neoDriver = GraphDatabase.driver ( 

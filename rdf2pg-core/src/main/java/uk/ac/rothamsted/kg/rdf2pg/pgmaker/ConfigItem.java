@@ -107,8 +107,8 @@ public class ConfigItem<SM extends SimplePGMaker<?,?,?,?>>
 		PGNodeMakeProcessor<?> nodeMaker = simpleMaker.getPGNodeMaker ();
 		PGRelationMakeProcessor<?> relMaker = simpleMaker.getPGRelationMaker ();
 		
-		PGNodeHandler nodeHandler = (PGNodeHandler) nodeMaker.getBatchJob ();
-		PGRelationHandler relHandler = (PGRelationHandler) relMaker.getBatchJob ();
+		PGNodeHandler nodeHandler = nodeMaker.getBatchJob ();
+		PGRelationHandler relHandler = relMaker.getBatchJob ();
 		
 		nodeMaker.setNodeIrisSparql ( this.getNodeIrisSparql () );
 

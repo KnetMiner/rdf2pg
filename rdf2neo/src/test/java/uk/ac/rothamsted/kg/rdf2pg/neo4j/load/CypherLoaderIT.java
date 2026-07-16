@@ -53,7 +53,7 @@ public class CypherLoaderIT
 	}
 	
 	@Test
-	public void testLoading () throws Exception
+	public void testLoading ()
 	{
 		try (
 			var neoDriver = GraphDatabase.driver ( 
@@ -99,7 +99,7 @@ public class CypherLoaderIT
 	
 
 	@Test
-	public void testMultiConfigLoading () throws Exception
+	public void testMultiConfigLoading ()
 	{
 		try ( var cymloader = new MultiConfigNeo4jLoader (); )
 		{

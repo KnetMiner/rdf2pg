@@ -53,7 +53,7 @@ public class Rdf2PGCliTest
 		}
 
 		@Override
-		public int makePropertyGraph () throws Exception
+		public int makePropertyGraph ()
 		{
 			cfg = this.xmlConfigPath;
 			tdb = this.tdbPath;
