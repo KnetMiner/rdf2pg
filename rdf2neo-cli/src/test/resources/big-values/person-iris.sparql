@@ -1,0 +1,6 @@
+PREFIX ex: <http://example.org/>
+
+SELECT DISTINCT ?iri
+{
+  ?iri a ex:Person.
+}

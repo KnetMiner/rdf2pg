@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- 
+	  Just leave this here. It means some components are got from the Java source files, by means of
+	  Spring annotations. You do need this base (which the declarations below extend/override). 
+	-->
+  <context:component-scan base-package = "uk.ac.rothamsted.kg.rdf2pg">
+  	<context:exclude-filter type = "regex" expression = "uk\.ac\.rothamsted\.kg\.rdf2pg\..+\.cli" />
+  </context:component-scan>
+
+
+	<!-- The custom config we test -->	
+	<bean id = "neo4jGeneralConfig" 
+		class = "uk.ac.rothamsted.kg.rdf2pg.neo4j.load.Neo4jGeneralConfig"
+		primary = "true"
+	>
+		<property name = "maxStringLength" value = "50" />
+		<property name = "maxSetSize" value = "20" />
+	</bean>
+	
+	<bean id = "pwd" class = "java.lang.String">
+		<constructor-arg value = 
+		  "/${project.basedir}/target/test-classes/big-values" 
+		/>		
+	</bean>
+
+
+	<bean class = "uk.ac.rothamsted.kg.rdf2pg.pgmaker.ConfigItem">
+		
+		<!--
+		  This is the name of this config item/subset of data. It is used only for communication purposes, 
+		  such as log messages.
+		-->			
+		<property name = "name" value = "persons" />
+
+		<property name = "nodeIrisSparql">
+			<!-- Use this to read a SPARQL query from a file -->
+			<bean class = "uk.ac.ebi.utils.opt.io.IOUtils" factory-method = "readFile">
+      	 <!-- 
+      	   You need the index param, cause there are a couple of variants for this methods and Spring needs
+      	   some disambiguation
+      	  -->
+				<constructor-arg value = "#{ pwd + '/person-iris.sparql' }" index = "0" />
+			</bean>
+		</property>
+		
+		<property name="labelsSparql">
+			<bean class = "uk.ac.ebi.utils.opt.io.IOUtils" factory-method = "readFile">
+				<constructor-arg value = "#{ pwd + '/person-labels.sparql' }" index = "0" />
+			</bean>
+		</property>
+
+		<property name="nodePropsSparql">
+			<bean class = "uk.ac.ebi.utils.opt.io.IOUtils" factory-method = "readFile">
+				<constructor-arg value = "#{ pwd + '/person-props.sparql' }" index = "0" />
+			</bean>
+		</property>
+
+	</bean>
+	
+	
+	<!-- We need the pgmakerSession scope, since a new driver is created for each query set -->
+	<bean id = "neoDriver" 
+			  class = "org.neo4j.driver.GraphDatabase" factory-method="driver"
+			  scope = "pgmakerSession"
+	>
+		
+		<constructor-arg value = "bolt://127.0.0.1:17690" />
+				
+		<constructor-arg>
+			<bean class = "org.neo4j.driver.AuthTokens" factory-method = "basic">
+				<constructor-arg value = "neo4j" />
+				<constructor-arg value = "testTest" />
+			</bean>
+		</constructor-arg>
+		
+	</bean>
+				
+</beans>

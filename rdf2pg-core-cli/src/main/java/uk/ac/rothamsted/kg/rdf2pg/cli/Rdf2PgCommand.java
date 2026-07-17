@@ -2,10 +2,13 @@ package uk.ac.rothamsted.kg.rdf2pg.cli;
 
 import org.apache.jena.tdb2.TDB2Factory;
 import org.apache.jena.tdb2.loader.Loader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import uk.ac.rothamsted.kg.rdf2pg.pgmaker.GeneralConfig;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.MultiConfigPGMaker;
 
 /**
@@ -62,6 +65,13 @@ public abstract class Rdf2PgCommand<MM extends MultiConfigPGMaker<?, ?>> extends
 	 */
 	protected final Class<MM> makerClass;
 	
+	/**
+	 * Injected here to allow {@link #call()} to log its values.
+	 */
+	@Autowired ( required = false ) @Qualifier ( "generalConfig" )
+	protected GeneralConfig generalConfig;
+	
+	
 	protected Rdf2PgCommand ( Class<MM> makerClass )
 	{
 		this.makerClass = makerClass;
@@ -89,6 +99,7 @@ public abstract class Rdf2PgCommand<MM extends MultiConfigPGMaker<?, ?>> extends
 	@Override
 	public final Integer call () throws Exception
 	{
+		log.info ( "General configuration loaded: {}", generalConfig );
 		if ( this.rdfFilePaths != null && rdfFilePaths.length > 0 ) this.load2Tdb ();
 		return rdfLoadOnly ? 0 : this.makePropertyGraph ();
 	}
@@ -106,4 +117,5 @@ public abstract class Rdf2PgCommand<MM extends MultiConfigPGMaker<?, ?>> extends
 		Loader.load ( dataset.asDatasetGraph (), true, this.rdfFilePaths );
 		log.info ( "TDB Loading ended" );
 	}
+		
 }

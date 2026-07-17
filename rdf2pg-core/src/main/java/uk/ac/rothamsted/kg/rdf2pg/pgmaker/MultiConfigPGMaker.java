@@ -78,8 +78,12 @@ public abstract class MultiConfigPGMaker<CI extends ConfigItem<SM>, SM extends S
 	}
 	
 	
-	
-	protected ApplicationContext getSpringContext ()
+	/**
+	 * The setter is protected, since only {@link #getSpringInstance(ApplicationContext)} 
+	 * needs that. This getter is public instead, for tests.
+	 * 
+	 */
+	public ApplicationContext getSpringContext ()
 	{
 		return springContext;
 	}

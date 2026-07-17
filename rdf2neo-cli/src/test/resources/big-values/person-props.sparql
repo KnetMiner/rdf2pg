@@ -1,0 +1,6 @@
+SELECT DISTINCT ?iri ?name ?value
+{
+  ?iri ?name ?value.
+	FILTER isLiteral ( ?value )
+}
+

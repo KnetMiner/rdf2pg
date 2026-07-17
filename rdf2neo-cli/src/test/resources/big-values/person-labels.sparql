@@ -1,0 +1,4 @@
+SELECT DISTINCT ?iri ?label
+{
+	BIND ( "Person" AS ?label )
+}

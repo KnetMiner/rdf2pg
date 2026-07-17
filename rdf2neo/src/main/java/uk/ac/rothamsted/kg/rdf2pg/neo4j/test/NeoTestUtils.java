@@ -33,4 +33,9 @@ public class NeoTestUtils
 		}
 	}
 
+	
+	public static Driver getNeoDriver ()
+	{
+		return GraphDatabase.driver( NEO_TEST_URL, AuthTokens.basic ( NEO_TEST_USER, NEO_TEST_PWD ) );
+	}
 }

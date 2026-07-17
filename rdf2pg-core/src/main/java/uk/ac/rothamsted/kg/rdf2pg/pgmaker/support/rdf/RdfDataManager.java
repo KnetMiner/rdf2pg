@@ -2,9 +2,14 @@ package uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf;
 
 import static info.marcobrandizi.rdfutils.jena.JenaGraphUtils.JENAUTILS;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.QuerySolutionMap;
@@ -16,7 +21,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import info.marcobrandizi.rdfutils.jena.TDBEndPointHelper;
+import uk.ac.ebi.utils.exceptions.ExceptionUtils;
 import uk.ac.rothamsted.kg.rdf2pg.idconvert.DefaultIri2IdConverter;
+import uk.ac.rothamsted.kg.rdf2pg.pgmaker.GeneralConfig;
+import uk.ac.rothamsted.kg.rdf2pg.pgmaker.GeneralConfig.BigValueMode;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.PGNodeHandler;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.PGNodeMakeProcessor;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.PGRelationHandler;
@@ -43,7 +51,10 @@ public class RdfDataManager extends TDBEndPointHelper
 	private Function<String, String> pgNodeLabelIdConverter = new DefaultIri2IdConverter ();
 	private Function<String, String> pgPropertyIdConverter = new DefaultIri2IdConverter (); 
 	private Function<String, String> pgRelationIdConverter = new DefaultIri2IdConverter ();
-		
+	
+	private GeneralConfig generalConfig = new GeneralConfig ();
+	
+	
 	public RdfDataManager () {
 	}
 
@@ -97,6 +108,7 @@ public class RdfDataManager extends TDBEndPointHelper
 		return getPGNode ( nodeRes, labelsSparql, propsSparql ); 
 	}
 
+
 	/**
 	 * Gets a Cypher ID by applying an {@link DefaultIri2IdConverter ID conversion function} to an IRI taken from a 
 	 * {@link Resource} RDF/Jena node, or to a lexical value taken from a {@link Literal} RDF/Jena node. 
@@ -120,6 +132,8 @@ public class RdfDataManager extends TDBEndPointHelper
 	 * Take an existing {@link PGEntity} and adds the properties that can be mapped from the underlining TDB by means 
 	 * of a property query, like {@link PGNodeHandler#getNodePropsSparql()}, or 
 	 * {@link PGNodeHandler#getRelationPropsSparql()}.
+	 * 
+	 * Before returning, it also calls {@link #fixPGPropSize(PGEntity)}. 
 	 * 
 	 * It doesn't do anything if the query is null.
 	 * 
@@ -151,7 +165,88 @@ public class RdfDataManager extends TDBEndPointHelper
 			},
 			params
 		);
+		
+		this.fixPGPropSize ( pgEntity );
 	} // addPGProps()
+	
+	
+	/**
+	 * 
+	 * Uses {@link #getGeneralConfig()} to deal with property values over configured size limits.
+	 */
+	protected void fixPGPropSize ( PGEntity pgEntity )
+	{
+		var cfg = this.getGeneralConfig ();
+
+		var pgprops = pgEntity.getProperties ();
+		if ( pgprops == null || pgprops.isEmpty () ) return;
+		
+		var bigValueMode = ObjectUtils.defaultIfNull ( cfg.getBigValueMode (), BigValueMode.IGNORE );
+		
+		if ( bigValueMode.equals ( GeneralConfig.BigValueMode.IGNORE ) ) return;
+				
+		Map<String, Set<Object>> newProps = new HashMap<> ();
+		String truncTrailer = ObjectUtils.defaultIfNull ( cfg.getBigValueTrailer (), "" );
+		
+		var maxSetSize = cfg.getMaxSetSize ();
+		var maxStrLen = cfg.getMaxStringLength ();
+				
+		for ( String pname: pgprops.keySet () )
+		{
+			var pvalues = pgEntity.getPropValues ( pname );
+			
+			if ( pvalues == null || pvalues.isEmpty () )
+				continue;
+			
+			if ( pvalues.size () > maxSetSize )
+				// We're not in IGNORE mode here, so set size is to be enforced
+				ExceptionUtils.throwEx ( IllegalArgumentException.class,
+					"Property %s from <%s> has %d values, above the set limit of %d",
+					pname, pgEntity.getIri (), pvalues.size (), maxSetSize
+			);
+			
+			int totalStrLen = pvalues.stream ()
+				.filter ( v -> v instanceof String )
+				.map ( s -> ((String) s).length () )
+				.filter ( l -> l > maxStrLen )
+				.mapToInt ( Integer::intValue )
+				.sum ();
+				
+			if ( totalStrLen <= maxStrLen ) continue;
+			
+			if ( bigValueMode.equals ( GeneralConfig.BigValueMode.ERROR ) )
+				ExceptionUtils.throwEx ( IllegalArgumentException.class,
+					"Property %s from <%s> is above the set limit of %d characters",
+					pname, pgEntity.getIri (), maxStrLen
+			); 
+
+			// Truncate or Truncate+Ignore
+			int truncSize = maxStrLen / pvalues.size () - truncTrailer.length ();
+			
+			if ( truncSize < 1 && !bigValueMode.equals ( GeneralConfig.BigValueMode.TRUNCATE_OR_IGNORE ) )
+				ExceptionUtils.throwEx ( IllegalArgumentException.class,
+					"Property %s from <%s> is above the set limit of %d characters, and cannot be truncated",
+					pname, pgEntity.getIri (), maxStrLen
+			);
+			
+			var newPValues = pvalues.stream ()
+			.map ( v -> {
+				if ( ! (v instanceof String) ) return v;
+				String s = (String) v;
+				if ( s.length () <= truncSize ) return s;
+				return s.substring ( 0, truncSize ) + truncTrailer;
+				// Doesn't work with truncSize <= 15
+				// return StringUtils.abbreviate ( s, truncTrailer, truncSize );
+			})
+			.collect ( Collectors.toSet () );
+			
+			newProps.put ( pname, newPValues );
+		} // for pname
+		
+		// newProps has only those that need replacement
+		for ( String pname: newProps.keySet () )
+			pgprops.put ( pname, newProps.get ( pname ) );
+	} // fixPGPropSize()
 	
 	/**
 	 * Does something with the results coming from {@link PGNodeMakeProcessor#getNodeIrisSparql() node IRI query}.
@@ -185,6 +280,8 @@ public class RdfDataManager extends TDBEndPointHelper
 	/**
 	 * Similarly to {@link #addPGProps(PGEntity, String)}, takes a {@link PGRelation} and adds the properties that
 	 * can be mapped via {@link PGRelationHandler#getRelationPropsSparql() relation property query}.
+	 * 
+	 * TODO: the name is inconsistent, turn it into addPGRelationProps().
 	 * 
 	 */
 	public void setPGRelationProps ( PGRelation cyRelation, String propsSparql )
@@ -251,6 +348,20 @@ public class RdfDataManager extends TDBEndPointHelper
 	{
 		this.pgPropertyIdConverter = propertyIdConverter;
 	}
+	
+	
+
+	public GeneralConfig getGeneralConfig ()
+	{
+		return generalConfig;
+	}
+
+	@Autowired ( required = false ) @Qualifier ( "generalConfig" )
+	public void setGeneralConfig ( GeneralConfig generalConfig )
+	{
+		this.generalConfig = generalConfig;
+	}
+	
 
 	/**
 	 * No action for the case that sparqlSelect is null. 
@@ -267,5 +378,6 @@ public class RdfDataManager extends TDBEndPointHelper
 		}
 		return super.processSelect ( logPrefix, sparqlSelect, action, params );
 	}
+	
 	
 }
