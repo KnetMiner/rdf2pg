@@ -2,8 +2,6 @@ package uk.ac.rothamsted.kg.rdf2pg.cli;
 
 import org.apache.jena.tdb2.TDB2Factory;
 import org.apache.jena.tdb2.loader.Loader;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -64,27 +62,27 @@ public abstract class Rdf2PgCommand<MM extends MultiConfigPGMaker<?, ?>> extends
 	 * the specific maker to work with.  
 	 */
 	protected final Class<MM> makerClass;
-	
-	/**
-	 * Injected here to allow {@link #call()} to log its values.
-	 */
-	@Autowired ( required = false ) @Qualifier ( "generalConfig" )
-	protected GeneralConfig generalConfig;
-	
-	
+
+
 	protected Rdf2PgCommand ( Class<MM> makerClass )
 	{
 		this.makerClass = makerClass;
 	}
-	
+
 	/**
 	 * Helper that calls {@link MultiConfigPGMaker#getSpringInstance(String, Class)} using {@link #xmlConfigPath}
 	 * as file parameter and using {@link #makerClass} for the maker to be fetched.
-	 * 
+	 *
+	 * This is also the point where {@link GeneralConfig} becomes available (it's a bean in the XML-loaded
+	 * business context, not in the CLI context that this command belongs to), so it's logged here.
+	 *
 	 */
 	protected MM getMakerFromSpringConfig ()
 	{
-		return MultiConfigPGMaker.getSpringInstance ( xmlConfigPath, makerClass );
+		var maker = MultiConfigPGMaker.getSpringInstance ( xmlConfigPath, makerClass );
+		var generalConfig = maker.getSpringContext ().getBean ( GeneralConfig.class );
+		log.info ( "General configuration loaded: {}", generalConfig );
+		return maker;
 	}
 
 	
@@ -99,7 +97,6 @@ public abstract class Rdf2PgCommand<MM extends MultiConfigPGMaker<?, ?>> extends
 	@Override
 	public final Integer call () throws Exception
 	{
-		log.info ( "General configuration loaded: {}", generalConfig );
 		if ( this.rdfFilePaths != null && rdfFilePaths.length > 0 ) this.load2Tdb ();
 		return rdfLoadOnly ? 0 : this.makePropertyGraph ();
 	}
