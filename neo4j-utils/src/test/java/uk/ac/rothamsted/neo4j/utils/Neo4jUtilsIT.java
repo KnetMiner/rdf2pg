@@ -7,8 +7,19 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Values;
+import org.neo4j.driver.reactivestreams.ReactiveResult;
+import org.neo4j.driver.reactivestreams.ReactiveTransactionContext;
+import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import static org.junit.Assert.assertEquals;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import org.junit.AfterClass;
 
@@ -65,7 +76,7 @@ public class Neo4jUtilsIT
 
 	
 	@Test
-	public void testScan ()
+	public void testPaginatedRead ()
 	{
 		long pageSize = 20;
 		var pager = Neo4jUtils.paginatedRead (
@@ -85,7 +96,7 @@ public class Neo4jUtilsIT
 	}
 	
 	@Test
-	public void testScanEmpty ()
+	public void testPaginatedReadEmpty ()
 	{
 		long pageSize = 20;
 		var pager = Neo4jUtils.paginatedRead (
@@ -101,23 +112,103 @@ public class Neo4jUtilsIT
 	}
 
 	@Test
-	public void testScanSinglePage ()
+	public void testPaginatedReadSinglePage ()
 	{
 		long pageSize = testNodesSize;
-		var pager = Neo4jUtils.paginatedRead (
+		Iterator<Integer> pager = Neo4jUtils.paginatedRead (
 			(tx, offset) -> tx.run (
 				"MATCH ( n: PagerTestNode ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
 				Values.parameters ( "offset", offset, "pageSize", pageSize )
-			), 
+			).stream ()
+			.map ( r -> r.get ( "idx", -1 ) )
+			.iterator (), 
 			neoDriver,
 			pageSize
 		);
 		
 		int i = 0;
 		while ( pager.hasNext () )
-			assertEquals ( "Wrong item fetched (single page query)!", i++, pager.next ().get ( "idx", -1 ) );
+			assertEquals ( "Wrong item fetched (single page query)!", i++, pager.next ().intValue () );
 		
 		assertEquals ( "Wrong size fetched (single page query)!", testNodesSize, i );
+	}
+	
+	
+	@Test
+	public void testReactivePaginatedRead ()
+	{
+		long pageSize = 20;
+				 
+		// In many cases, you can call this version, which spares you the conversion to
+		// a Flux of Records. See the other test methods for a lower-level version. 
+		//
+		Flux<Integer> pagerFlux = Neo4jUtils.reactivePaginatedRead2Records (
+			(tx, offset) -> tx.run ( 
+				"MATCH ( n: PagerTestNode ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
+				Values.parameters ( "offset", offset, "pageSize", pageSize )
+			),
+			neoDriver,
+			pageSize
+		)
+		.map ( r -> r.get ( "idx", -1 ) );
+		
+		Iterator<Integer> pager = pagerFlux.toIterable ().iterator ();
+		
+		int i = 0;
+		while ( pager.hasNext () )
+			assertEquals ( "Wrong item fetched!", i++, pager.next ().intValue () );
+		
+		assertEquals ( "Wrong size fetched!", testNodesSize, i );
+	}
+	
+	
+	@Test
+	public void testReactivePaginatedReadEmpty ()
+	{
+		long pageSize = 20;
+				 
+		// As mentioned above, this is a lower-level version, which might be useful eg, to 
+		// call ReactiveResult.consume() or .keys()
+		//
+		Flux<Integer> pagerFlux = Neo4jUtils.reactivePaginatedRead (
+			(tx, offset) -> Mono.fromDirect ( tx.run ( 
+				"MATCH ( n: PagerTestNodeFoo ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
+				Values.parameters ( "offset", offset, "pageSize", pageSize )
+			))
+			.flatMapMany ( ReactiveResult::records )
+			.map ( r -> r.get ( "idx", -1 ) ),
+			neoDriver,
+			pageSize
+		);
+		
+		Iterator<Integer> pager = pagerFlux.toIterable ().iterator ();
+		Assert.assertFalse ( "pager should be false against empty Cypher!", pager.hasNext () );
+	}
+	
+	
+	@Test
+	public void testReactivePaginatedReadSinglePage ()
+	{
+		long pageSize = testNodesSize;
+				 
+		Flux<Integer> pagerFlux = Neo4jUtils.reactivePaginatedRead2Records (
+			(tx, offset) -> tx.run ( 
+				"MATCH ( n: PagerTestNode ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
+				Values.parameters ( "offset", offset, "pageSize", pageSize )
+			)
+			,
+			neoDriver,
+			pageSize
+		)
+		.map ( r -> r.get ( "idx", -1 ) );
+		
+		Iterator<Integer> pager = pagerFlux.toIterable ().iterator ();
+		
+		int i = 0;
+		while ( pager.hasNext () )
+			assertEquals ( "Wrong item fetched!", i++, pager.next ().intValue () );
+		
+		assertEquals ( "Wrong size fetched!", testNodesSize, i );
 	}
 	
 }

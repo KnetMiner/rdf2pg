@@ -114,6 +114,16 @@ public class XNeo4jDriver implements Driver
 		return driver.session ( defaultSessionConfig () );
 	}
 
+	/**
+	 * WARNING: if you create a session with {@link SessionConfig#builder()}, 
+	 * this <b>will not</b> use the default database name set for this driver.
+	 * Use {@link #sessionConfigBuilder()} to create a session config that does that.
+	 * 
+	 * TODO: if a 3rd-party method gets Driver and creates a session config, it 
+	 * can't work as said above. A possible solution is that this method creates 
+	 * {@link #sessionConfigBuilder() its own builder} and then copies the 3rd-party 
+	 * config into it. However, we would need to start caching session configs.
+	 */
 	public Session session ( SessionConfig sessionConfig )
 	{
 		return driver.session ( sessionConfig );

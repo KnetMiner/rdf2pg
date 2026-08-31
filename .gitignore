@@ -8,3 +8,4 @@ target/
 /ci-build/build.sh
 /ci-build/install.sh
 /ci-build/maven-settings.xml
+.claude/
