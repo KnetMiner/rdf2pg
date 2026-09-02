@@ -142,11 +142,23 @@ public class Neo4jUtils
 		// As explained in PaginationIterator, here we can return the page elements iterator,
 		// or null when the current page has not elements anymore.
 		
-		// We need to keep the session open until the last page, so the page selector has 
-		// to manage its life cycle. 
-		Mutable<Session> session = new MutableObject<> ();
-		Mutable<Transaction> transaction = new MutableObject<> ();
-
+		// We can't use the usual try-with-resources or session.execRead(), since these resources
+		// must be open until the page is consumed.
+		
+		// We create one session per page, not one for all the pages. That's because in case
+		// of concurrent queries and long lists of records to fetch, the driver quickly runs 
+		// out of connections. 
+		// One session per page is a bit less efficient, but it works well in practice.
+		//
+		class State {
+			Session session;
+			Transaction transaction;
+		}
+		
+		var state = new State ();
+		
+		// We can't use session.execRead(), so let's create read-only transactions instead.
+		// If the driver is our friend, use its methods, as explained in the Javadoc.
 		SessionConfig.Builder scBuilder = neoDriver instanceof XNeo4jDriver 
 			? ((XNeo4jDriver) neoDriver).sessionConfigBuilder () 
 			: SessionConfig.builder ();
@@ -155,29 +167,29 @@ public class Neo4jUtils
 			.build ();
 		Function<Long, Iterator<T>> pageSelector = offset ->
 		{
-			Session theSession = session.getValue ();
-			if ( theSession == null ) 
-				session.setValue ( theSession = neoDriver.session ( sessionConfig ) );
-			else
-				// At least one page already done, close the transaction about it
-				transaction.getValue ().close ();
-				
-			// New page, new transaction
-			Transaction theTx = transactionConfig == null 
-				? theSession.beginTransaction ()
-				: theSession.beginTransaction ( transactionConfig );
-			transaction.setValue ( theTx );
+			if ( state.session != null )
+			{
+				// At least one page already done, close the transaction and the session about it
+				state.transaction.close ();
+				state.session.close ();
+			}
+			
+			// And then let's go with a new session and a new transaction for each new page
+			state.session = neoDriver.session ( sessionConfig );
+			
+			state.transaction = transactionConfig == null 
+				? state.session.beginTransaction ()
+				: state.session.beginTransaction ( transactionConfig );
 						
-			Iterator<T> pageItr = callBack.apply ( theTx, offset );
+			Iterator<T> pageItr = callBack.apply ( state.transaction, offset );
 			
 			if ( pageItr.hasNext () ) return pageItr;
 			
 			// No more pages, close the transaction and the session			
-			theTx.close ();
-			theSession.close ();
+			state.transaction.close ();
+			state.session.close ();
 			return null;
-		};
-			
+		};			
 		return PaginationIterator.offsetBasedElementsIterator ( 
 			pageSelector, pageSize
 		);
@@ -327,10 +339,6 @@ public class Neo4jUtils
 			}
 			
 			State state = new State ();
-
-			// One session for all the pages. We create it here, since the flux below is subscribed straight
-			// after this outer subscription.
-			state.rsession = neoDriver.session ( ReactiveSession.class );
 			
 			// The pages are obtained by combining the page flux and repeat() conditioned on 
 			// page.isEmpty. 
@@ -338,6 +346,10 @@ public class Neo4jUtils
 			//
 			Flux<T> allPagesFlux = Flux.defer ( () -> 
 			{
+				// As explained in paginatedRead(), we use one session per page, 
+				// to avoid running out of connections in case of concurrent and long-result queries 
+				state.rsession = neoDriver.session ( ReactiveSession.class );
+				
 				// We use the Neo straight instead of reactiveRead(), because the latter would use one session
 				// per page, which is slightly less efficient
 				Flux<T> pageFlux = Flux.from ( state.rsession.executeRead ( 
@@ -361,17 +373,17 @@ public class Neo4jUtils
 				})
 				.doOnCancel ( () -> {
 					log.debug ( "Neo4j paginated reactive query cancelled at offset", state.offset );
+				})
+				.doFinally ( signal -> {
+					// Whatever the end, clean up the session for this page
+					state.rsession.close ();
 				});
 				
 				return pageFlux;
 			}) // defer() for allPagesFlux
 			// After the current page, keep subscribing to the page flux again, which has advanced the offset
 			// Do it until the last page
-			.repeat ( () -> !state.isPageEmpty )
-			.doFinally ( signal -> {
-				// Whatever the end, clean up
-				state.rsession.close ();
-			});
+			.repeat ( () -> !state.isPageEmpty );
 			
 			return allPagesFlux;
 		}); // defer() for result
