@@ -35,8 +35,7 @@
 
   <!-- Add Loggers this way if you want finer reports for selected components -->
   <logger name = "uk.ac.rothamsted.rdf.neo4j" level = "TRACE" />
-  <logger name="uk.ac.rothamsted.rdf.neo4j" level = "debug" />
-  <logger name="uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf" level = "debug" />
+  <logger name = "uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf" level = "debug" />
 	<logger name = "org.apache.jena" level = "info" />
 	<logger name = "TDB" level = "info" />
 
