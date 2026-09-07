@@ -274,18 +274,16 @@ public class Neo4jUtils
 			ReactiveSession::close, // usingWhen(), flux cleanup in case of completion
 			
 			// usingWhen(), flux cleanup in case of error
-			(rsession, ex) -> {
-				rsession.close ();
-				throw ExceptionUtils.buildEx ( 
+			(rsession, ex) -> 
+				Mono.from ( rsession.close () )
+				.then ( Mono.error ( ExceptionUtils.buildEx ( 
 					ClientException.class, ex, "Error while running reactive Neo4j query: $cause"
-				);
-			},
-				
+				)))
+			,
 			// usingWhen(), flux cleanup in case of cancellation
 			rsession -> {
 				log.debug ( "Neo4j reactive query cancelled" );
-				rsession.close ();
-				return Flux.empty ();
+				return Mono.from ( rsession.close () );
 			}
 			
 		); // usingWhen ()
@@ -322,9 +320,6 @@ public class Neo4jUtils
 		Long pageSize 			
 	)
 	{	
-		// All of this could be done with a couple of Flux.usingWhen(), I guess it's a matter of preference.
-		//
-		
 		long pageSizeRO = pageSize == null ? DEFAULT_PAGE_SIZE : pageSize;
 				
 		Flux<T> result = Flux.defer ( () ->
@@ -335,24 +330,25 @@ public class Neo4jUtils
 			class State {
 	      long offset = 0;
 	      boolean isPageEmpty = true;
-	      ReactiveSession rsession = null;
 			}
 			
 			State state = new State ();
 			
 			// The pages are obtained by combining the page flux and repeat() conditioned on 
 			// page.isEmpty. 
+			// 
 			// The game is started upon subscription only 
 			//
-			Flux<T> allPagesFlux = Flux.defer ( () -> 
-			{
+			// TODO: part of this could be replaced by reactiveRead(), when we add a variant that returns T 
+			// instead of Record, as in reactivePaginatedRead2Records()
+			//
+			Flux<T> allPagesFlux = Flux.usingWhen (
+				// New session upon first subscription or repeat() of the outer flux, ie, for each page
 				// As explained in paginatedRead(), we use one session per page, 
-				// to avoid running out of connections in case of concurrent and long-result queries 
-				state.rsession = neoDriver.session ( ReactiveSession.class );
-				
-				// We use the Neo straight instead of reactiveRead(), because the latter would use one session
-				// per page, which is slightly less efficient
-				Flux<T> pageFlux = Flux.from ( state.rsession.executeRead ( 
+				// to avoid running out of connections in case of concurrent and long-result queries					
+				Mono.fromSupplier ( () -> neoDriver.session ( ReactiveSession.class ) ),
+				// usingWhen(), the page
+				rsession -> Flux.from ( rsession.executeRead ( 
 					tx -> callBack.apply ( tx, state.offset ) 
 				))
 			  .switchOnFirst ( (signal, flux) -> {
@@ -364,23 +360,21 @@ public class Neo4jUtils
 				.doOnComplete ( () -> {
 					// Page is over, move to the next one if available
 					if ( !state.isPageEmpty ) state.offset += pageSizeRO;
-				})
-				.doOnError ( ex -> 
-				{
-					throw ExceptionUtils.buildEx ( 
+				}),
+				// usingWhen(), completion
+			  ReactiveSession::close,
+			  // usingWhen(), error
+			  (rsession, ex) ->
+					Mono.from ( rsession.close () )
+					.then ( Mono.error ( ExceptionUtils.buildEx ( 
 						ClientException.class, ex, "Error while running reactive Neo4j query: $cause"
-					);
-				})
-				.doOnCancel ( () -> {
-					log.debug ( "Neo4j paginated reactive query cancelled at offset", state.offset );
-				})
-				.doFinally ( signal -> {
-					// Whatever the end, clean up the session for this page
-					state.rsession.close ();
-				});
-				
-				return pageFlux;
-			}) // defer() for allPagesFlux
+					))),
+				// usingWhen(), cancellation					
+				rsession -> {
+          log.debug ( "Neo4j paginated reactive query cancelled at offset {}", state.offset );
+          return Mono.from ( rsession.close () );
+        }
+			) // usingWhen()
 			// After the current page, keep subscribing to the page flux again, which has advanced the offset
 			// Do it until the last page
 			.repeat ( () -> !state.isPageEmpty );
