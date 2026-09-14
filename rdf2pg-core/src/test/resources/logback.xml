@@ -28,7 +28,7 @@
   </appender>
   
 	<!-- Minimal logging by default. WARNING: logback expects this to be put after the appenders! -->
-  <root level="DEBUG">
+  <root level="INFO">
     <appender-ref ref="ConsoleApp" />
     <appender-ref ref="FileApp" />
   </root>
@@ -36,7 +36,6 @@
   <!-- Add Loggers this way if you want finer reports for selected components -->
   <logger name = "uk.ac.rothamsted.rdf.neo4j" level = "TRACE" />
   <logger name = "uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf" level = "debug" />
-	<logger name = "org.apache.jena" level = "info" />
-	<logger name = "TDB" level = "info" />
-
+  <logger name = "uk.ac.rothamsted.neo4j" level = "DEBUG" />
+  
 </configuration>
