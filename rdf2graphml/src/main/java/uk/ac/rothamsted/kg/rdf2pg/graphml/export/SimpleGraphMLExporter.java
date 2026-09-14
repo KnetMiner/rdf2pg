@@ -1,7 +1,6 @@
 package uk.ac.rothamsted.kg.rdf2pg.graphml.export;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.context.annotation.Scope;

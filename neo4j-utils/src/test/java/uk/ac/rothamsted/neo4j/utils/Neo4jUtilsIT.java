@@ -1,31 +1,19 @@
 package uk.ac.rothamsted.neo4j.utils;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Iterator;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.reactivestreams.ReactiveResult;
-import org.neo4j.driver.reactivestreams.ReactiveTransactionContext;
-import org.reactivestreams.Publisher;
-import org.testcontainers.neo4j.Neo4jContainer;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
-
-import static org.junit.Assert.assertEquals;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
-
-import org.junit.AfterClass;
 
 /**
  *

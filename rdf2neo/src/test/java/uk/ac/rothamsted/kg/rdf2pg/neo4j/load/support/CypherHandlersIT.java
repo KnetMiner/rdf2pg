@@ -4,7 +4,6 @@ import static info.marcobrandizi.rdfutils.namespaces.NamespaceUtils.iri;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -15,22 +14,17 @@ import java.util.stream.Stream;
 
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.AccessMode;
-import org.neo4j.driver.AuthTokens;
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.neo4j.Neo4jContainer;
 
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.test.NeoTestUtils;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;

@@ -2,7 +2,6 @@ package uk.ac.rothamsted.kg.rdf2pg.pgmaker;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 

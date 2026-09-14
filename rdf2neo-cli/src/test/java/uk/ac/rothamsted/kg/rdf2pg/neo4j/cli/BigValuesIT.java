@@ -1,5 +1,10 @@
 package uk.ac.rothamsted.kg.rdf2pg.neo4j.cli;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import uk.ac.rothamsted.kg.rdf2pg.cli.Rdf2PGCli;
@@ -10,13 +15,6 @@ import uk.ac.rothamsted.kg.rdf2pg.pgmaker.GeneralConfig;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.MultiConfigPGMaker;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
 import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.ClassRule;
-
-import static org.junit.Assert.assertFalse;
 
 /**
  * Tests the big values options in {@link Neo4jGeneralConfig}.

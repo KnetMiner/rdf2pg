@@ -5,19 +5,15 @@ import static org.junit.Assert.assertTrue;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.slf4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.testcontainers.neo4j.Neo4jContainer;
 
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.load.spring.SimpleCyLoaderFactory;
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.load.support.CyNodeLoadingHandler;

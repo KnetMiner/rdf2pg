@@ -1,8 +1,6 @@
 package uk.ac.rothamsted.kg.rdf2pg.neo4j.test;
 
-import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
 
 /**

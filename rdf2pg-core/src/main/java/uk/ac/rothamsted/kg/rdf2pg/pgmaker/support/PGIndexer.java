@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import info.marcobrandizi.rdfutils.jena.TDBEndPointHelper;
-import uk.ac.rothamsted.kg.rdf2pg.pgmaker.DefaultNamedPGMakeComp;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.ConfigItem;
+import uk.ac.rothamsted.kg.rdf2pg.pgmaker.DefaultNamedPGMakeComp;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.spring.PGMakerSessionScope;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
 

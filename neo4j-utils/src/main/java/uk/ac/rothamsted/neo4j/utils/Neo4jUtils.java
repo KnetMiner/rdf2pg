@@ -5,8 +5,6 @@ import java.util.Iterator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.apache.commons.lang3.mutable.Mutable;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
@@ -16,7 +14,6 @@ import org.neo4j.driver.SimpleQueryRunner;
 import org.neo4j.driver.Transaction;
 import org.neo4j.driver.TransactionCallback;
 import org.neo4j.driver.TransactionConfig;
-import org.neo4j.driver.TransactionContext;
 import org.neo4j.driver.exceptions.ClientException;
 import org.neo4j.driver.reactivestreams.ReactiveResult;
 import org.neo4j.driver.reactivestreams.ReactiveSession;
@@ -25,13 +22,10 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import uk.ac.ebi.utils.collections.PaginationIterator;
 import uk.ac.ebi.utils.exceptions.ExceptionUtils;
-import uk.ac.ebi.utils.opt.runcontrol.ReactorUtils;
 
 /**
  * Utilities to work with the Project Reactor integration into Neo4j.

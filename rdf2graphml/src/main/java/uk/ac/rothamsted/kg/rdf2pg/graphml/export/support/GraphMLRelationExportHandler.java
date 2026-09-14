@@ -11,9 +11,7 @@ import static uk.ac.rothamsted.kg.rdf2pg.graphml.export.support.GraphMLUtils.wri
 import static uk.ac.rothamsted.kg.rdf2pg.graphml.export.support.GraphMLUtils.writeXMLAttrib;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.jena.query.QuerySolution;
 import org.springframework.beans.factory.annotation.Autowired;
