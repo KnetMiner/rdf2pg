@@ -8,13 +8,8 @@ import org.neo4j.driver.BaseSession;
 import org.neo4j.driver.BookmarkManager;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.ExecutableQuery;
-import org.neo4j.driver.Metrics;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
-import org.neo4j.driver.async.AsyncSession;
-import org.neo4j.driver.reactive.ReactiveSession;
-import org.neo4j.driver.reactive.RxSession;
-import org.neo4j.driver.types.TypeSystem;
 
 /**
  * 
@@ -93,22 +88,25 @@ public class XNeo4jDriver implements Driver
 	}
 	
 	
-	
+	@Override
 	public ExecutableQuery executableQuery ( String query )
 	{
 		return driver.executableQuery ( query );
 	}
 
+	@Override	
 	public BookmarkManager executableQueryBookmarkManager ()
 	{
 		return driver.executableQueryBookmarkManager ();
 	}
 
+	@Override	
 	public boolean isEncrypted ()
 	{
 		return driver.isEncrypted ();
 	}
 
+	@Override	
 	public Session session ()
 	{
 		return driver.session ( defaultSessionConfig () );
@@ -124,119 +122,80 @@ public class XNeo4jDriver implements Driver
 	 * {@link #sessionConfigBuilder() its own builder} and then copies the 3rd-party 
 	 * config into it. However, we would need to start caching session configs.
 	 */
+	@Override	
 	public Session session ( SessionConfig sessionConfig )
 	{
 		return driver.session ( sessionConfig );
 	}
 
+	@Override
 	public <T extends BaseSession> T session ( Class<T> sessionClass )
 	{
 		return driver.session ( sessionClass, defaultSessionConfig () );
 	}
 
+	@Override
 	public <T extends BaseSession> T session ( Class<T> sessionClass, AuthToken sessionAuthToken )
 	{
 		return driver.session ( sessionClass, defaultSessionConfig (), sessionAuthToken );
 	}
 
+	@Override
 	public <T extends BaseSession> T session ( Class<T> sessionClass, SessionConfig sessionConfig )
 	{
 		return driver.session ( sessionClass, sessionConfig );
 	}
 
+	@Override
 	public <T extends BaseSession> T session ( 
 		Class<T> sessionClass, SessionConfig sessionConfig, AuthToken sessionAuthToken )
 	{
 		return driver.session ( sessionClass, sessionConfig, sessionAuthToken );
 	}
 
-	@Deprecated
-	public RxSession rxSession ()
-	{
-		return driver.rxSession ( defaultSessionConfig () );
-	}
-
-	@Deprecated
-	public RxSession rxSession ( SessionConfig sessionConfig )
-	{
-		return driver.rxSession ( sessionConfig );
-	}
-
-	@Deprecated
-	public ReactiveSession reactiveSession ()
-	{
-		return driver.reactiveSession ( defaultSessionConfig () );
-	}
-
-	@Deprecated
-	public ReactiveSession reactiveSession ( SessionConfig sessionConfig )
-	{
-		return driver.reactiveSession ( sessionConfig );
-	}
-
-	@Deprecated
-	public AsyncSession asyncSession ()
-	{
-		return driver.asyncSession ( defaultSessionConfig () );
-	}
-
-	@Deprecated
-	public AsyncSession asyncSession ( SessionConfig sessionConfig )
-	{
-		return driver.asyncSession ( sessionConfig );
-	}
-
+	@Override
 	public void close ()
 	{
 		driver.close ();
 	}
 
+	@Override
 	public CompletionStage<Void> closeAsync ()
 	{
 		return driver.closeAsync ();
 	}
 
-	public Metrics metrics ()
-	{
-		return driver.metrics ();
-	}
-
-	public boolean isMetricsEnabled ()
-	{
-		return driver.isMetricsEnabled ();
-	}
-
-	@Deprecated
-	public TypeSystem defaultTypeSystem ()
-	{
-		return driver.defaultTypeSystem ();
-	}
-
+	@Override
 	public void verifyConnectivity ()
 	{
 		driver.verifyConnectivity ();
 	}
 
+	@Override
 	public CompletionStage<Void> verifyConnectivityAsync ()
 	{
 		return driver.verifyConnectivityAsync ();
 	}
 
+	@Override
 	public boolean verifyAuthentication ( AuthToken authToken )
 	{
 		return driver.verifyAuthentication ( authToken );
 	}
 
+	@Override
 	public boolean supportsSessionAuth ()
 	{
 		return driver.supportsSessionAuth ();
 	}
 
+	@Override
 	public boolean supportsMultiDb ()
 	{
 		return driver.supportsMultiDb ();
 	}
 
+	@Override
 	public CompletionStage<Boolean> supportsMultiDbAsync ()
 	{
 		return driver.supportsMultiDbAsync ();
