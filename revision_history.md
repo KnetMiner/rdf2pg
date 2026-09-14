@@ -1,9 +1,15 @@
 # Revision History
 
-* *This file has been last revised on 2025-08-27*. **Please, keep this note updated**.
+* *This file has been last revised on 2026-09-14*. **Please, keep this note updated**.
 
 ## 7.0.2-SNAPSHOT
-* Current snapshot
+* `GeneralConfig`, introduced, to manage app-level config properties.
+* 'Big values mode' added to the general configuration.
+* Utils:
+	* reactive paginated read
+	* existing read utilites made more efficient
+* Test fixture: migration from `com.github.harti2006:neo4j-server-maven-plugin` to TestContainers.
+* Various dependency upgrades.
 
 
 ## 7.0.1
