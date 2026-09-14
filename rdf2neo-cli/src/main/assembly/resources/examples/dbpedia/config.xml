@@ -5,6 +5,9 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
 
+  <!--  Get Java properties set by the code (eg, tests) -->
+	<context:property-placeholder system-properties-mode="OVERRIDE" />
+
 	<!-- 
 	  Just leave this here. It means some components are got from the Java source files, by means of
 	  Spring annotations. You do need this base (which the declarations below extend/override). 

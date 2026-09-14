@@ -14,28 +14,14 @@ import org.neo4j.driver.Session;
  */
 public class NeoTestUtils
 {
-	public static final String NEO_TEST_URL = "bolt://127.0.0.1:17690";
-	public static final String NEO_TEST_USER = "neo4j";
-	public static final String NEO_TEST_PWD = "testTest";
-	
-	
 	/**
 	 * Facility to empty the Neo4j test DB.
 	 */
-	public static void initNeo ()
+	public static void initNeo ( Driver neoDriver)
 	{
-		try (	
-				Driver neoDriver = GraphDatabase.driver( NEO_TEST_URL, AuthTokens.basic ( NEO_TEST_USER, NEO_TEST_PWD ) );
-				Session session = neoDriver.session ();
-			)
+		try (	Session session = neoDriver.session () )
 		{
 			session.run ( "MATCH (n) DETACH DELETE n" );
 		}
-	}
-
-	
-	public static Driver getNeoDriver ()
-	{
-		return GraphDatabase.driver( NEO_TEST_URL, AuthTokens.basic ( NEO_TEST_USER, NEO_TEST_PWD ) );
 	}
 }

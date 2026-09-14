@@ -39,8 +39,16 @@
 		<dependency>
 	    <groupId>junit</groupId>
 	    <artifactId>junit</artifactId>
-	    <scope>test</scope>
-		</dependency>			
+	    <scope>compile</scope>
+	    <optional>true</optional>
+		</dependency>
+		
+		<dependency>
+	    <groupId>org.testcontainers</groupId>
+	    <artifactId>testcontainers-neo4j</artifactId>
+	    <scope>compile</scope>
+	    <optional>true</optional>
+		</dependency>
   
   </dependencies>
   
@@ -53,21 +61,9 @@
   		<plugin>
   			<artifactId>maven-dependency-plugin</artifactId>
   		</plugin>			
-			
-			<!-- Detailed configurations are on the top POM -->
-			<plugin>
-				<groupId>com.github.harti2006</groupId>
-				<artifactId>neo4j-server-maven-plugin</artifactId>
-			</plugin>
-			
+						
 			<plugin>
 	      <artifactId>maven-failsafe-plugin</artifactId>
-	      <configuration>
-	        <systemPropertyVariables>
-	        	<!-- Integration tests needing to connect the test Neo4j might need this -->
-	          <neo4j.server.boltPort>${neo4j.server.boltPort}</neo4j.server.boltPort>
-	        </systemPropertyVariables>
-	      </configuration>      
 			</plugin>			
 			
   	</plugins>

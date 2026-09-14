@@ -1,7 +1,6 @@
 package uk.ac.rothamsted.kg.rdf2pg.neo4j.cli;
 
 import org.junit.Test;
-import org.neo4j.driver.GraphDatabase;
 
 import uk.ac.rothamsted.kg.rdf2pg.cli.Rdf2PGCli;
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.load.MultiConfigNeo4jLoader;
@@ -10,9 +9,13 @@ import uk.ac.rothamsted.kg.rdf2pg.neo4j.test.NeoTestUtils;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.GeneralConfig;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.MultiConfigPGMaker;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
+import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -24,6 +27,9 @@ import static org.junit.Assert.assertFalse;
  */
 public class BigValuesIT
 {
+	@ClassRule
+	public static NeoTestContainerResource neoContainer = new NeoTestContainerResource ();
+	
 	/**
 	 * The default config in rdf2neo is {@link Neo4jGeneralConfig} 
 	 */
@@ -53,7 +59,8 @@ public class BigValuesIT
 			)
 		)
 		{
-			GeneralConfig config = maker.getSpringContext ().getBean ( RdfDataManager.class )
+			GeneralConfig config = maker.getSpringContext ()
+				.getBean ( RdfDataManager.class )
 				.getGeneralConfig ();
 			assertTrue ( "Wrong config bean loaded!", config instanceof Neo4jGeneralConfig );
 			assertEquals ( "maxStringLength not overriden by the XML!", 50, config.getMaxStringLength () );
@@ -77,12 +84,15 @@ public class BigValuesIT
 			)
 		)
 		{
-			var cfg = maker.getSpringContext ().getBean ( RdfDataManager.class ).getGeneralConfig ();
+			var cfg = maker.getSpringContext ()
+				.getBean ( RdfDataManager.class )
+				.getGeneralConfig ();
 			maxStrLen = cfg.getMaxStringLength ();
 			truncTrailer = cfg.getBigValueTrailer ();
 		}
 		
-		NeoTestUtils.initNeo ();
+		var neoDriver = neoContainer.getNeoDriver ();
+		NeoTestUtils.initNeo ( neoDriver );
 		
 		Rdf2PGCli.main ( 
 			"--config", "target/test-classes/big-values/config.xml", 
@@ -93,9 +103,8 @@ public class BigValuesIT
 		// Find (p:Person) RETURN p.description
 		// Check its len is <= maxStrLen
 		// Check it ends with the truncation trailer
-		try ( var driver = NeoTestUtils.getNeoDriver () )
+		try ( var session = neoDriver.session (); )
 		{
-			var session = driver.session ();
 			var cursor = session.run ( "MATCH (p:Person) RETURN p.description AS desc" );
 			assertTrue ( "No Person node found!", cursor.hasNext () );
 			var desc = cursor.next ().get ( "desc" ).asString ();
@@ -127,7 +136,8 @@ public class BigValuesIT
 			truncTrailer = cfg.getBigValueTrailer ();
 		}
 		
-		NeoTestUtils.initNeo ();
+		var neoDriver = neoContainer.getNeoDriver ();
+		NeoTestUtils.initNeo ( neoDriver );
 		
 		Rdf2PGCli.main ( 
 			"--config", "target/test-classes/big-values/config.xml", 
@@ -138,9 +148,8 @@ public class BigValuesIT
 		// Find (p:Person) RETURN p.notes, which is a list of strings
 		// Check total len is <= maxStrLen
 		// Check each value ends with the truncation trailer
-		try ( var driver = NeoTestUtils.getNeoDriver () )
+		try ( var session = neoDriver.session (); )
 		{
-			var session = driver.session ();
 			var cursor = session.run ( "MATCH (p:Person) RETURN p.notes AS notes" );
 			assertTrue ( "No Person node found!", cursor.hasNext () );
 			var notes = cursor.next ().get ( "notes" ).asList ( v -> v.asString () );
@@ -171,7 +180,8 @@ public class BigValuesIT
 	@Test
 	public void testBigListThrowsError ()
 	{
-		NeoTestUtils.initNeo ();
+		var neoDriver = neoContainer.getNeoDriver ();
+		NeoTestUtils.initNeo ( neoDriver );
 		
 		Rdf2PGCli.main ( 
 			"--config", "target/test-classes/big-values/config.xml", 
@@ -179,9 +189,8 @@ public class BigValuesIT
 			"target/test-classes/big-values/big-values-n-sets.ttl"
 		);
 		
-		try ( var driver = NeoTestUtils.getNeoDriver () )
+		try ( var session = neoDriver.session () )
 		{
-			var session = driver.session ();
 			var cursor = session.run ( "MATCH (p:Person) RETURN p.friendIds AS friendIds" );
 			assertFalse ( "Big passed loading!", cursor.hasNext () );
 		}

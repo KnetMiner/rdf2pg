@@ -2,11 +2,13 @@ package uk.ac.rothamsted.kg.rdf2pg.neo4j.cli;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import uk.ac.rothamsted.kg.rdf2pg.cli.Rdf2PGCli;
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.test.NeoTestUtils;
 import uk.ac.rothamsted.kg.rdf2pg.test.DataTestUtils;
+import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
 
 /**
  * The test for the Neo CLI
@@ -17,6 +19,8 @@ import uk.ac.rothamsted.kg.rdf2pg.test.DataTestUtils;
  */
 public class Rdf2NeoCommandIT
 {
+	@ClassRule
+	public static NeoTestContainerResource neoContainer = new NeoTestContainerResource ();
 		
 	/**
 	 * From an existing TDB
@@ -40,7 +44,7 @@ public class Rdf2NeoCommandIT
 	@Test
 	public void testRdf2Neo ()
 	{
-		NeoTestUtils.initNeo ();
+		NeoTestUtils.initNeo ( neoContainer.getNeoDriver () );
 		
 		var dbpath = "target/test-classes/examples/dbpedia/";
 		

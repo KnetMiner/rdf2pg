@@ -2,6 +2,8 @@ package uk.ac.rothamsted.neo4j.utils;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -10,9 +12,11 @@ import org.neo4j.driver.Values;
 import org.neo4j.driver.reactivestreams.ReactiveResult;
 import org.neo4j.driver.reactivestreams.ReactiveTransactionContext;
 import org.reactivestreams.Publisher;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,24 +34,22 @@ import org.junit.AfterClass;
  *
  */
 public class Neo4jUtilsIT
-{
-	// TODO: duplicated from rdf2neo, factorise
-	
-	public static final String NEO_TEST_URL = "bolt://127.0.0.1:" + System.getProperty ( "neo4j.server.boltPort" );
-	public static final String NEO_TEST_USER = "neo4j";
-	public static final String NEO_TEST_PWD = "testTest";
-	
-	private static Driver neoDriver = GraphDatabase.driver ( 
-		NEO_TEST_URL, AuthTokens.basic ( NEO_TEST_USER, NEO_TEST_PWD )
-	);
-	
+{		
 	private static int testNodesSize = 1000;
+	
+	@ClassRule
+	public static NeoTestContainerResource neoContainer = new NeoTestContainerResource ();
+	
+	private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger ( Neo4jUtilsIT.class );
+
 	
 	@BeforeClass
 	public static void init ()
-	{
-		try ( var session = neoDriver.session () )
+	{		
+		try ( var session = neoContainer.getNeoDriver ().session () )
 		{
+			/* TODO: remove, no longer needed with TestContainers
+
 			session.executeWriteWithoutResult ( tx ->
 			{ 
 				for ( int i = 0; i < testNodesSize; i++ )
@@ -55,6 +57,8 @@ public class Neo4jUtilsIT
 						"MATCH (n:PagerTestNode) DELETE n"
 					);				
 			});
+			
+			*/
 
 			session.executeWriteWithoutResult ( tx ->
 			{ 
@@ -64,16 +68,9 @@ public class Neo4jUtilsIT
 						Values.parameters ( "idx", i ) 
 					);				
 			});
-		}
+		}		
 	}
 	
-	
-	@AfterClass
-	public static void close ()
-	{		
-		neoDriver.close ();
-	}
-
 	
 	@Test
 	public void testPaginatedRead ()
@@ -84,7 +81,7 @@ public class Neo4jUtilsIT
 				"MATCH ( n: PagerTestNode ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
 				Values.parameters ( "offset", offset, "pageSize", pageSize )
 			), 
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		);
 		
@@ -104,7 +101,7 @@ public class Neo4jUtilsIT
 				"MATCH ( n: PagerTestNodeFoo ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
 				Values.parameters ( "offset", offset, "pageSize", pageSize )
 			), 
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		);
 		
@@ -122,7 +119,7 @@ public class Neo4jUtilsIT
 			).stream ()
 			.map ( r -> r.get ( "idx", -1 ) )
 			.iterator (), 
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		);
 		
@@ -147,7 +144,7 @@ public class Neo4jUtilsIT
 				"MATCH ( n: PagerTestNode ) RETURN n.idx AS idx SKIP $offset LIMIT $pageSize",
 				Values.parameters ( "offset", offset, "pageSize", pageSize )
 			),
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		)
 		.map ( r -> r.get ( "idx", -1 ) );
@@ -177,7 +174,7 @@ public class Neo4jUtilsIT
 			))
 			.flatMapMany ( ReactiveResult::records )
 			.map ( r -> r.get ( "idx", -1 ) ),
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		);
 		
@@ -197,7 +194,7 @@ public class Neo4jUtilsIT
 				Values.parameters ( "offset", offset, "pageSize", pageSize )
 			)
 			,
-			neoDriver,
+			neoContainer.getNeoDriver (),
 			pageSize
 		)
 		.map ( r -> r.get ( "idx", -1 ) );

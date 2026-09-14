@@ -14,14 +14,17 @@
 			  scope = "pgmakerSession"
 	>
 		
-		<constructor-arg value = "bolt://127.0.0.1:17690" />
-				
-		<constructor-arg>
+		<!-- Taken from the test container and set before loading the Spring context -->
+		<constructor-arg value = "${neo4j.client.uri}" />
+		
+		<!--  TODO: remove, now it uses Test Containers		
+		< constructor-arg>
 			<bean class = "org.neo4j.driver.AuthTokens" factory-method = "basic">
 				<constructor-arg value = "neo4j" />
 				<constructor-arg value = "testTest" />
 			</bean>
-		</constructor-arg>
+		</ constructor-arg>
+	  -->
 		
 	</bean>
 		

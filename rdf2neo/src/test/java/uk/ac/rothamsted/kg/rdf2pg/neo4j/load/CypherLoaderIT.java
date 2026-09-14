@@ -5,15 +5,19 @@ import static org.junit.Assert.assertTrue;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.slf4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.load.spring.SimpleCyLoaderFactory;
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.load.support.CyNodeLoadingHandler;
@@ -28,6 +32,7 @@ import uk.ac.rothamsted.kg.rdf2pg.pgmaker.PropertyGraphMaker;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
 import uk.ac.rothamsted.kg.rdf2pg.test.DataTestUtils;
 import uk.ac.rothamsted.neo4j.utils.test.CypherTester;
+import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
 
 /**
  * Basic tests for {@link SimpleCyLoader} and {@link MultiConfigPGMaker}.
@@ -41,32 +46,36 @@ import uk.ac.rothamsted.neo4j.utils.test.CypherTester;
  */
 public class CypherLoaderIT
 {
+	@ClassRule
+	public static NeoTestContainerResource neoContainer = new NeoTestContainerResource ();
+	
+	private Logger log = org.slf4j.LoggerFactory.getLogger ( this.getClass () );
+
+	
 	@BeforeClass
 	public static void initTDB ()
 	{
 		DataTestUtils.initDBpediaDataSet ();
 	}
 	
-	@Before
-	public void initNeo () {
-		NeoTestUtils.initNeo ();
-	}
 	
+	@Before
+	public void initNeoData () {		
+		NeoTestUtils.initNeo ( neoContainer.getNeoDriver () );
+	}
+		
+
 	@Test
 	public void testLoading ()
 	{
 		try (
-			var neoDriver = GraphDatabase.driver ( 
-				NeoTestUtils.NEO_TEST_URL, 
-				AuthTokens.basic ( NeoTestUtils.NEO_TEST_USER, NeoTestUtils.NEO_TEST_PWD )
-			);
 			var cyloader = new SimpleCyLoader ();
 			var rdfMgr = new RdfDataManager ( DataTestUtils.TDB_PATH );
 		)
 		{
 			// You don't want to do this, see #testSpring()
 			
-			Neo4jDataManager neoMgr = new Neo4jDataManager ( neoDriver );
+			Neo4jDataManager neoMgr = new Neo4jDataManager ( neoContainer.getNeoDriver () );
 			
 			CyNodeLoadingHandler cyNodeHandler = new CyNodeLoadingHandler ();
 			CyRelationLoadingHandler cyRelHandler = new CyRelationLoadingHandler ();
@@ -111,11 +120,7 @@ public class CypherLoaderIT
 					public SimpleCyLoader getObject () throws BeansException
 					{
 						RdfDataManager rdfMgr = new RdfDataManager ();
-						Driver neoDriver = GraphDatabase.driver (
-							NeoTestUtils.NEO_TEST_URL, 
-							AuthTokens.basic ( NeoTestUtils.NEO_TEST_USER, NeoTestUtils.NEO_TEST_PWD )
-						);
-						Neo4jDataManager neoMgr = new Neo4jDataManager ( neoDriver );			
+						Neo4jDataManager neoMgr = new Neo4jDataManager ( neoContainer.getNeoDriver () );			
 						
 						CyNodeLoadingHandler cyNodeHandler = new CyNodeLoadingHandler ();
 						CyRelationLoadingHandler cyRelHandler = new CyRelationLoadingHandler ();
@@ -212,14 +217,14 @@ public class CypherLoaderIT
 	
 	@Test
 	public void testNeoIndexing ()
-	{
+	{		
 		try ( 
 			ConfigurableApplicationContext beanCtx = new ClassPathXmlApplicationContext ( "multi_config_indexing.xml" );
 			MultiConfigNeo4jLoader mloader = MultiConfigNeo4jLoader.getSpringInstance ( beanCtx, MultiConfigNeo4jLoader.class );				
 		)
 		{			
 			mloader.load ( DataTestUtils.TDB_PATH );
-			// TODO: CALL db.indexes(); to test for the index existance.
+			// TODO: CALL db.indexes(); to test for the index existence.
 		}
 	}		
 }

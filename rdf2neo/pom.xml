@@ -32,6 +32,12 @@
 			<scope>test</scope>
 		</dependency>
 		
+		<dependency>
+	    <groupId>org.testcontainers</groupId>
+	    <artifactId>testcontainers-neo4j</artifactId>
+	    <scope>test</scope>
+		</dependency>
+				
 	</dependencies>
  
 	<build>
@@ -41,13 +47,7 @@
 		  <plugin>
 		    <artifactId>maven-surefire-plugin</artifactId>
 		  </plugin>
-		
-			<!-- Detailed configurations are on the top POM -->
-			<plugin>
-				<groupId>com.github.harti2006</groupId>
-				<artifactId>neo4j-server-maven-plugin</artifactId>
-			</plugin>
-				
+						
 	    <plugin>
 	      <artifactId>maven-failsafe-plugin</artifactId>
 	    </plugin>

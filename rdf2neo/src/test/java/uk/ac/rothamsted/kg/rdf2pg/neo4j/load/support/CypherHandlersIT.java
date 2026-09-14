@@ -15,9 +15,11 @@ import java.util.stream.Stream;
 
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.AuthTokens;
@@ -28,11 +30,13 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 import uk.ac.rothamsted.kg.rdf2pg.neo4j.test.NeoTestUtils;
 import uk.ac.rothamsted.kg.rdf2pg.pgmaker.support.rdf.RdfDataManager;
 import uk.ac.rothamsted.kg.rdf2pg.test.DataTestUtils;
 import uk.ac.rothamsted.neo4j.utils.test.CypherTester;
+import uk.ac.rothamsted.neo4j.utils.test.NeoTestContainerResource;
 
 /**
  * Runs {@link CypherLoadingHandler}-related tests.
@@ -43,8 +47,11 @@ import uk.ac.rothamsted.neo4j.utils.test.CypherTester;
  */
 public class CypherHandlersIT
 {
-	private Logger log = LoggerFactory.getLogger ( this.getClass () );
+	@ClassRule
+	public static NeoTestContainerResource neoContainer = new NeoTestContainerResource ();
 
+	private Logger log = LoggerFactory.getLogger ( this.getClass () );
+	
 	@BeforeClass
 	public static void initData () {
 		DataTestUtils.initData ();
@@ -56,15 +63,11 @@ public class CypherHandlersIT
 	@Before
 	public void initNeoData ()
 	{
-		NeoTestUtils.initNeo ();
+		var neoDriver = neoContainer.getNeoDriver ();
+		
+		NeoTestUtils.initNeo ( neoDriver );
 
-		try (	
-			var neoDriver = GraphDatabase.driver( 
-				NeoTestUtils.NEO_TEST_URL, 
-				AuthTokens.basic ( NeoTestUtils.NEO_TEST_USER, NeoTestUtils.NEO_TEST_PWD )
-			);
-			var rdfMgr = new RdfDataManager ( DataTestUtils.TDB_PATH );
-		)
+		try (	var rdfMgr = new RdfDataManager ( DataTestUtils.TDB_PATH ) )
 		{
 			CyNodeLoadingHandler handler = new CyNodeLoadingHandler ();
 			Neo4jDataManager neoMgr = new Neo4jDataManager ( neoDriver );
@@ -91,19 +94,12 @@ public class CypherHandlersIT
 	@Test
 	public void testNodes ()
 	{
-		try (	
-			Driver neoDriver = GraphDatabase.driver ( 
-				NeoTestUtils.NEO_TEST_URL, 
-				AuthTokens.basic ( NeoTestUtils.NEO_TEST_USER, NeoTestUtils.NEO_TEST_PWD )
-			);
-		)
-		{
-			var config = SessionConfig.builder ()
-			.withDefaultAccessMode ( AccessMode.READ )
-			.build ();
-			
-			Session session = neoDriver.session ( config );
-			
+		var config = SessionConfig.builder ()
+		.withDefaultAccessMode ( AccessMode.READ )
+		.build ();
+
+		try (	Session session = neoContainer.getNeoDriver ().session ( config ) )
+		{	
 			Result cursor = session.run ( "MATCH ( n:TestNode ) RETURN COUNT ( n ) AS ct" );
 			Assert.assertEquals ( "Wrong count for TestNode", 2, cursor.next ().get ( "ct" ).asLong () );
 			
@@ -122,16 +118,10 @@ public class CypherHandlersIT
 	@Test
 	public void testRelations ()
 	{
-		try (	
-			var neoDriver = GraphDatabase.driver ( 
-				NeoTestUtils.NEO_TEST_URL, 
-				AuthTokens.basic ( NeoTestUtils.NEO_TEST_USER, NeoTestUtils.NEO_TEST_PWD )
-			);
-			var rdfMgr = new RdfDataManager ( DataTestUtils.TDB_PATH );
-		)
+		try (	var rdfMgr = new RdfDataManager ( DataTestUtils.TDB_PATH ) )
 		{
 			CyRelationLoadingHandler handler = new CyRelationLoadingHandler ();
-			Neo4jDataManager neoMgr = new Neo4jDataManager ( neoDriver );
+			Neo4jDataManager neoMgr = new Neo4jDataManager ( neoContainer.getNeoDriver () );
 
 			handler.setRdfDataManager ( rdfMgr );
 			handler.setNeo4jDataManager ( neoMgr );

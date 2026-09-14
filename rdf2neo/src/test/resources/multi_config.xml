@@ -5,9 +5,13 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
 
+  <!--  Get Java properties set by the code (eg, tests) -->
+	<context:property-placeholder system-properties-mode="OVERRIDE" />
+
   <context:component-scan base-package = "uk.ac.rothamsted.kg.rdf2pg">
   	<context:exclude-filter type = "regex" expression = "uk\.ac\.rothamsted\.kg\.rdf2pg\..+\.cli" />
   </context:component-scan>
+
 
 	<!-- 
 	  Each ConfigItem is a mapping query set.
@@ -103,15 +107,17 @@
 			  class = "org.neo4j.driver.GraphDatabase" factory-method="driver"
 			  scope = "pgmakerSession"
 	>
+		<!-- Taken from the test container and set before loading the Spring context -->
+		<constructor-arg value = "${neo4j.client.uri}" />
 		
-		<constructor-arg value = "bolt://127.0.0.1:17690" />
-				
-		<constructor-arg>
+		<!--  TODO: remove, now it uses Test Containers		
+		< constructor-arg>
 			<bean class = "org.neo4j.driver.AuthTokens" factory-method = "basic">
 				<constructor-arg value = "neo4j" />
 				<constructor-arg value = "testTest" />
 			</bean>
-		</constructor-arg>
+		</ constructor-arg>
+	  -->
 		
 	</bean>
 		
