@@ -44,12 +44,14 @@
 	</modules>
 	
 	<properties>
+		<!-- TODO: upon 25, Spring complaints that it doesn't support the bytecode yet -->
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<slf4j.version>2.0.19</slf4j.version>
 		<jutils.version>16.2.1-SNAPSHOT</jutils.version>
 		<rdfutils.version>6.0</rdfutils.version>
+		<!-- Used with Neo test container -->
 		<neo4j.server.version>5.26.8</neo4j.server.version>
 	</properties>
 	
@@ -135,6 +137,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.6.0</version>
 					<configuration>
 						<!--
 							Command line tests can invoke a CLI test without this braking the build cycle with System.exit()
@@ -154,6 +157,7 @@
 				<!-- Use this to start integration tests (*IT.java) -->
 				<plugin>
 					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>3.6.0</version>
 					<configuration>
 						<properties>
 							<property>
@@ -184,6 +188,7 @@
 				-->
 				<plugin>
 					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.8.0</version>
 					<configuration>
 						<archiverConfig>
 							<fileMode>0755</fileMode>
@@ -298,11 +303,13 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.16.0</version>
 				</plugin>
 				
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.5.0</version>
 				</plugin>
 								
 				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven 

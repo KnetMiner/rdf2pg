@@ -10,6 +10,7 @@
 	* existing read utilites made more efficient
 * Test fixture: migration from `com.github.harti2006:neo4j-server-maven-plugin` to TestContainers.
 * Various dependency upgrades.
+* `org.eclipse.m2e:lifecycle-mapping` added, to fix Eclipse errors/false positives.
 
 
 ## 7.0.1
