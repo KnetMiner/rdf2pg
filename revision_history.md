@@ -1,8 +1,9 @@
 # Revision History
 
-* *This file has been last revised on 2026-09-14*. **Please, keep this note updated**.
+* *This file has been last revised on 2026-09-15*. **Please, keep this note updated**.
 
 ## 7.0.2-SNAPSHOT
+* Upgraded to Java 25. **Doesn't work with previous versions anymore**
 * `GeneralConfig`, introduced, to manage app-level config properties.
 * 'Big values mode' added to the general configuration.
 * Utils:
