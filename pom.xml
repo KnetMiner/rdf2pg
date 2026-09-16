@@ -357,6 +357,17 @@
 		</repository>
 	</repositories>
 	
+	<pluginRepositories>
+		<pluginRepository>
+			<!-- To pick the parent POM -->
+			<id>knetminer-repo</id>
+			<name>Knetminer Unified Repository</name>
+			<url>https://artifactory.knetminer.com/public</url>
+			<snapshots><enabled>true</enabled></snapshots>
+			<releases><enabled>true</enabled></releases>
+		</pluginRepository>	
+	</pluginRepositories>
+	
 	<distributionManagement>
 				
 	  <repository>
