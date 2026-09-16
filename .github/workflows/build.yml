@@ -4,54 +4,92 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      # These can be set when the build is invoked manually, from GH Actions.
+      # These are available when you trigger a workflow, as parameters.
       #
-      # Set BOTH when you want to trigger a new release. The build script will 
+      # Set BOTH when you want to trigger a new release. The build script will 
       # switch Maven to the new release, deploy, tag git, move Maven to the new snapshot
-      #
       NEW_RELEASE_VER:
         description: "New Release Version"
         required: false
+        type: string
       NEW_SNAPSHOT_VER:
         description: "New Snapshot Version"
         required: false
-    
+        type: string
+      IS_LATEST_RELEASE:
+        description: "When releasing, tells if it's a github latest release. Ignored otherwise."
+        required: false
+        default: true
+        type: boolean        
+      IS_PRE_RELEASE:
+        description: "When releasing, tells if it's a github pre-release. Ignored otherwise."
+        required: false
+        default: false
+        type: boolean
+
+        
+  # You should use this (instead of push) for large, time and resource-consuming codebases.
+  # build.sh uses CI_SCHEDULE_PERIOD to decide if there has been changes recently that actually need
+  # a rebuild.
+  #  
+  # schedule:
+  #  m h d M wd(MON-SUN), times are in UTC
+  # - cron: "0 10 * * *"
+
+permissions:
+  # Needed to push and when the repo belongs to an organisation.
+  contents: write
+
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
+    - name: Code checkout
+      uses: actions/checkout@v6
+      
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: 'temurin'
         java-version: 25
         settings-path: ${{ github.workspace }} # location for the settings.xml file
   
     - name: Cache Maven packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.m2
-        key: ${{ runner.os }}-m2-v7-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2-v7
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    # See the knetminer-ci documentation for details
+    - name: Forward secrets to env vars
+      env:
+        _SECRETS_JS_STR: ${{ toJSON(secrets) }}
+      run: |
+        # Using -c (compact) ensures the JSON is treated as a single line
+        echo "$_SECRETS_JS_STR" | jq -r 'to_entries[] | "\(.key)<<EOF\n\(.value)\nEOF"' >> $GITHUB_ENV    
 
     - name: Build
       env:
-        KNET_REPO_USER: ${{secrets.KNET_REPO_USER}}
-        KNET_REPO_PASSWORD: ${{secrets.KNET_REPO_PASSWORD}}
-        GIT_USER: ${{secrets.GIT_USER}}
-        GIT_PASSWORD: ${{github.token}}
-        GIT_USER_EMAIL: ${{secrets.GIT_USER_EMAIL}}
-        NEW_RELEASE_VER: ${{ github.event.inputs.NEW_RELEASE_VER }}
-        NEW_SNAPSHOT_VER: ${{ github.event.inputs.NEW_SNAPSHOT_VER }}
-        CI_SLACK_API_NOTIFICATION_URL: ${{secrets.CI_SLACK_API_NOTIFICATION_URL}}
+        # Parameters to trigger a new release (see above)
+        CI_NEW_RELEASE_VER: ${{github.event.inputs.NEW_RELEASE_VER}}
+        CI_NEW_SNAPSHOT_VER: ${{github.event.inputs.NEW_SNAPSHOT_VER}}
+        CI_IS_LATEST_RELEASE: ${{github.event.inputs.IS_LATEST_RELEASE}}
+        CI_IS_PRE_RELEASE: ${{github.event.inputs.IS_PRE_RELEASE}}
+
+        # These are usually auto-provided by GHA and you shouldn't need to change them
+        GIT_USER: ${{github.actor}}
+        GIT_PASSWORD: ${{github.GITHUB_TOKEN}}
+        GH_TOKEN: ${{ github.token }}
+
+        # What started this WF, as per GHA documentation. Scripts might use this to decide what
+        # todo, eg, if a build was triggered by a push or a schedule.
+        CI_TRIGGERING_EVENT: ${{github.event_name}}
         
-      run: |
-        mkdir -p ci-build
-        export CI_DIR_URL="https://raw.githubusercontent.com/Rothamsted/knetminer-common/master/ci-build"
-        wget "$CI_DIR_URL/install.sh" -O ci-build/install.sh
-        bash ./ci-build/install.sh
-        bash ./ci-build/build.sh
+      # We reuse the general CI scripts in knetminer-ci, see https://github.com/KnetMiner/knetminer-ci
+      # As per documentation, the framework client defines this script in the desired flavour directory,
+      # the script downloads/runs the installation script and then starts the build.
+      run: ci-build-v2/java-maven/build.sh

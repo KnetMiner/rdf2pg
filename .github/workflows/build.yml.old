@@ -1,0 +1,57 @@
+name: Standard Build
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      # These can be set when the build is invoked manually, from GH Actions.
+      #
+      # Set BOTH when you want to trigger a new release. The build script will 
+      # switch Maven to the new release, deploy, tag git, move Maven to the new snapshot
+      #
+      NEW_RELEASE_VER:
+        description: "New Release Version"
+        required: false
+      NEW_SNAPSHOT_VER:
+        description: "New Snapshot Version"
+        required: false
+    
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 25
+        settings-path: ${{ github.workspace }} # location for the settings.xml file
+  
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-v7-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2-v7
+
+    - name: Build
+      env:
+        KNET_REPO_USER: ${{secrets.KNET_REPO_USER}}
+        KNET_REPO_PASSWORD: ${{secrets.KNET_REPO_PASSWORD}}
+        GIT_USER: ${{secrets.GIT_USER}}
+        GIT_PASSWORD: ${{github.token}}
+        GIT_USER_EMAIL: ${{secrets.GIT_USER_EMAIL}}
+        NEW_RELEASE_VER: ${{ github.event.inputs.NEW_RELEASE_VER }}
+        NEW_SNAPSHOT_VER: ${{ github.event.inputs.NEW_SNAPSHOT_VER }}
+        CI_SLACK_API_NOTIFICATION_URL: ${{secrets.CI_SLACK_API_NOTIFICATION_URL}}
+        
+      run: |
+        mkdir -p ci-build
+        export CI_DIR_URL="https://raw.githubusercontent.com/Rothamsted/knetminer-common/master/ci-build"
+        wget "$CI_DIR_URL/install.sh" -O ci-build/install.sh
+        bash ./ci-build/install.sh
+        bash ./ci-build/build.sh

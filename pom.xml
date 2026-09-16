@@ -355,5 +355,20 @@
 			<snapshots><enabled>true</enabled></snapshots>
 			<releases><enabled>true</enabled></releases>
 		</repository>
-	</repositories>	
+	</repositories>
+	
+	<distributionManagement>
+				
+	  <repository>
+			<id>knetminer-repo</id>
+			<name>Knetminer Unified Repository</name>
+			<url>https://artifactory.knetminer.com/public</url>
+	  </repository>
+	  <snapshotRepository>
+			<id>knetminer-repo</id>
+			<name>Knetminer Unified Repository</name>
+			<url>https://artifactory.knetminer.com/public</url>
+	  </snapshotRepository>
+	  	
+	</distributionManagement>	
 </project>
