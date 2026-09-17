@@ -11,7 +11,7 @@ set -eE -o pipefail
 function stage_build_setup_local
 {
 	stage_build_setup
-	apt-get install libxml2-utils
+	sudo apt-get install libxml2-utils
 }
 
 
