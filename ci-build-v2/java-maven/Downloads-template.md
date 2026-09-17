@@ -4,13 +4,13 @@
 
 ## rdf2neo
 
-* [Latest Stable Release](%rdf2neoRel%)
-* [Latest Dev Release](%rdf2neoSnap%)
+* [Latest Stable Release](${rdf2neoRel})
+* [Latest Dev Release](${rdf2neoSnap})
 
 ## rdf2graphml
 
-* [Latest Stable Release](%rdf2graphmlRel%)
-* [Latest Dev Release](%rdf2graphmlSnap%)
+* [Latest Stable Release](${rdf2graphmlRel})
+* [Latest Dev Release](${rdf2graphmlSnap})
 
 ## Including rdf2pg tools in your project
 
