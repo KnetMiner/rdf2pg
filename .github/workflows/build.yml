@@ -82,8 +82,8 @@ jobs:
 
         # These are usually auto-provided by GHA and you shouldn't need to change them
         GIT_USER: ${{github.actor}}
-        GIT_PASSWORD: ${{github.GITHUB_TOKEN}}
-        GH_TOKEN: ${{ github.token }}
+        GIT_PASSWORD: ${{github.token}}
+        GH_TOKEN: ${{github.token}}
 
         # What started this WF, as per GHA documentation. Scripts might use this to decide what
         # todo, eg, if a build was triggered by a push or a schedule.
