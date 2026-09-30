@@ -53,7 +53,6 @@
 		<rdfutils.version>6.0</rdfutils.version>
 		<!-- Used with Neo test container -->
 		<neo4j.server.version>5.26.8</neo4j.server.version>
-		<_springframework.version>6.2.19</_springframework.version>
 		<springframework.version>7.0.9</springframework.version>
 	</properties>
 	
@@ -369,7 +368,7 @@
 	</pluginRepositories>
 	
 	<distributionManagement>
-				
+
 	  <repository>
 			<id>knetminer-repo</id>
 			<name>Knetminer Unified Repository</name>
